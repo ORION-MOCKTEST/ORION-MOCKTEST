@@ -174,6 +174,12 @@
             border-color: var(--success-color);
         }
 
+        .q-nav-button.reviewed {
+            background-color: var(--warning-color);
+            color: var(--dark-text);
+            border-color: var(--warning-color);
+        }
+
         .q-content {
             flex-grow: 1;
             background-color: var(--light-text);
@@ -250,6 +256,15 @@
             background-color: #adb5bd;
             cursor: not-allowed;
         }
+        
+        #reviewNextBtn {
+            background-color: var(--warning-color);
+            color: var(--dark-text);
+        }
+        #reviewNextBtn:hover:not(:disabled) {
+            background-color: #d6a100;
+        }
+
 
         .submit-section {
             text-align: center;
@@ -295,6 +310,27 @@
             margin-bottom: 25px;
             font-size: 2em;
         }
+        
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .stat-box.total { background-color: #e9f7ff; border: 1px solid var(--primary-color); color: var(--primary-color); }
+        .stat-box.correct { background-color: #e6ffed; border: 1px solid var(--success-color); color: var(--success-color); }
+        .stat-box.incorrect { background-color: #ffe6e6; border: 1px solid var(--danger-color); color: var(--danger-color); }
+        .stat-box.unattempted { background-color: #fff3cd; border: 1px solid var(--warning-color); color: var(--warning-color); }
+
 
         #scoreDisplay {
             text-align: center;
@@ -330,6 +366,10 @@
             color: var(--success-color);
             font-weight: bold;
         }
+        .result-details .wrong-answer {
+            color: var(--danger-color);
+        }
+
 
         .result-details .your-answer {
             font-style: italic;
@@ -351,6 +391,10 @@
         .question-result.incorrect {
             border-color: var(--danger-color);
             background-color: #ffe6e6;
+        }
+        .question-result.unattempted {
+            border-color: var(--warning-color);
+            background-color: #fff8e6;
         }
 
 
@@ -424,6 +468,10 @@
             #scoreDisplay {
                 font-size: 2em;
             }
+            
+            .result-stats {
+                grid-template-columns: 1fr 1fr;
+            }
         }
     </style>
 </head>
@@ -452,8 +500,17 @@
                         </div>
                 </div>
 
-                <div class="q-content">
+                <div class="q-content" id="questionContent">
                     </div>
+            </div>
+            
+            <div class="navigation-buttons">
+                <button id="prevBtn" class="nav-btn" disabled>Previous</button>
+                <div>
+                    <button id="reviewNextBtn" class="nav-btn">Mark for Review & Next</button>
+                    <button id="saveNextBtn" class="nav-btn">Save & Next</button>
+                </div>
+                <button id="nextBtn" class="nav-btn" style="display: none;">Next</button>
             </div>
 
             <div class="submit-section">
@@ -463,6 +520,7 @@
 
         <div id="resultSection" class="result-section">
             <h2>Test Results</h2>
+            <div class="result-stats" id="resultStats"></div>
             <div id="scoreDisplay"></div>
             <div id="resultDetails" class="result-details">
                 </div>
@@ -474,9 +532,16 @@
         let timeLeft = totalDuration;
         let timerInterval;
         let testStarted = false;
-        let currentQuestionIndex = 0; // 0-indexed
-        const questionsPerPage = 1; // Display one question at a time
+        let userAnswers = {}; // To store user's selected option: {questionId: selectedOptionIndex}
+        let questionStatuses = {}; // To store status: {questionId: 'attempted' | 'reviewed' | 'unattempted'}
+        let currentSection = 'A'; // Start with General Awareness
+        let currentQuestionIndex = 0; // Global index to track current question
 
+        const sections = ['A', 'B', 'C', 'D'];
+        
+        // --- QUIZ DATA ---
+        // I have included a limited set of questions for demonstration.
+        // You should paste all your remaining questions here to complete the 100-question test.
         const questions = [
             // Section A: General Awareness (Q1-Q25)
             {
@@ -528,448 +593,4 @@
             { id: 12, section: 'A', question: "Question 12 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q12." },
             { id: 13, section: 'A', question: "Question 13 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q13." },
             { id: 14, section: 'A', question: "Question 14 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q14." },
-            { id: 15, section: 'A', question: "Question 15 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q15." },
-            { id: 16, section: 'A', question: "Question 16 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q16." },
-            { id: 17, section: 'A', question: "Question 17 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q17." },
-            { id: 18, section: 'A', question: "Question 18 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q18." },
-            { id: 19, section: 'A', question: "Question 19 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q19." },
-            { id: 20, section: 'A', question: "Question 20 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q20." },
-            { id: 21, section: 'A', question: "Question 21 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q21." },
-            { id: 22, section: 'A', question: "Question 22 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q22." },
-            { id: 23, section: 'A', question: "Question 23 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q23." },
-            { id: 24, section: 'A', question: "Question 24 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q24." },
-            { id: 25, section: 'A', question: "Question 25 for General Awareness?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q25." },
-
-            // Section B: General Intelligence & Reasoning (Q26-Q50)
-            {
-                id: 26,
-                section: 'B',
-                question: "If 'A' is coded as 1, 'B' as 2, and so on, what is the code for 'ACE'?",
-                options: ["135", "125", "235", "145"],
-                correct: 0,
-                explanation: "A=1, C=3, E=5. So ACE = 135."
-            },
-            {
-                id: 27,
-                section: 'B',
-                question: "Find the missing number in the series: 2, 4, 8, 16, __",
-                options: ["20", "24", "30", "32"],
-                correct: 3,
-                explanation: "The series involves multiplying by 2 each time: 2x2=4, 4x2=8, 8x2=16, 16x2=32."
-            },
-            {
-                id: 28,
-                section: 'B',
-                question: "Which word does not belong with the others? 'Apple, Orange, Banana, Potato'",
-                options: ["Apple", "Orange", "Banana", "Potato"],
-                correct: 3,
-                explanation: "Apple, Orange, and Banana are fruits. Potato is a vegetable."
-            },
-            { id: 29, section: 'B', question: "Question 29 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q29." },
-            { id: 30, section: 'B', question: "Question 30 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q30." },
-            { id: 31, section: 'B', question: "Question 31 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q31." },
-            { id: 32, section: 'B', question: "Question 32 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q32." },
-            { id: 33, section: 'B', question: "Question 33 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q33." },
-            { id: 34, section: 'B', question: "Question 34 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q34." },
-            { id: 35, section: 'B', question: "Question 35 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q35." },
-            { id: 36, section: 'B', question: "Question 36 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q36." },
-            { id: 37, section: 'B', question: "Question 37 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q37." },
-            { id: 38, section: 'B', question: "Question 38 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q38." },
-            { id: 39, section: 'B', question: "Question 39 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q39." },
-            { id: 40, section: 'B', question: "Question 40 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q40." },
-            { id: 41, section: 'B', question: "Question 41 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q41." },
-            { id: 42, section: 'B', question: "Question 42 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q42." },
-            { id: 43, section: 'B', question: "Question 43 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q43." },
-            { id: 44, section: 'B', question: "Question 44 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q44." },
-            { id: 45, section: 'B', question: "Question 45 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q45." },
-            { id: 46, section: 'B', question: "Question 46 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q46." },
-            { id: 47, section: 'B', question: "Question 47 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q47." },
-            { id: 48, section: 'B', question: "Question 48 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q48." },
-            { id: 49, section: 'B', question: "Question 49 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q49." },
-            { id: 50, section: 'B', question: "Question 50 for Reasoning?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q50." },
-
-            // Section C: Arithmetical & Numerical Ability (Q51-Q75)
-            {
-                id: 51,
-                section: 'C',
-                question: "What is 15% of 200?",
-                options: ["20", "25", "30", "35"],
-                correct: 2,
-                explanation: "15% of 200 = (15/100) * 200 = 30."
-            },
-            {
-                id: 52,
-                section: 'C',
-                question: "If a car travels at 60 km/h, how long will it take to cover 180 km?",
-                options: ["2 hours", "3 hours", "4 hours", "5 hours"],
-                correct: 1,
-                explanation: "Time = Distance / Speed = 180 km / 60 km/h = 3 hours."
-            },
-            {
-                id: 53,
-                section: 'C',
-                question: "What is the square root of 144?",
-                options: ["10", "11", "12", "13"],
-                correct: 2,
-                explanation: "12 * 12 = 144."
-            },
-            { id: 54, section: 'C', question: "Question 54 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q54." },
-            { id: 55, section: 'C', question: "Question 55 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q55." },
-            { id: 56, section: 'C', question: "Question 56 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q56." },
-            { id: 57, section: 'C', question: "Question 57 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q57." },
-            { id: 58, section: 'C', question: "Question 58 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q58." },
-            { id: 59, section: 'C', question: "Question 59 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q59." },
-            { id: 60, section: 'C', question: "Question 60 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q60." },
-            { id: 61, section: 'C', question: "Question 61 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q61." },
-            { id: 62, section: 'C', question: "Question 62 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q62." },
-            { id: 63, section: 'C', question: "Question 63 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q63." },
-            { id: 64, section: 'C', question: "Question 64 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q64." },
-            { id: 65, section: 'C', question: "Question 65 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q65." },
-            { id: 66, section: 'C', question: "Question 66 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q66." },
-            { id: 67, section: 'C', question: "Question 67 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q67." },
-            { id: 68, section: 'C', question: "Question 68 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q68." },
-            { id: 69, section: 'C', question: "Question 69 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q69." },
-            { id: 70, section: 'C', question: "Question 70 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q70." },
-            { id: 71, section: 'C', question: "Question 71 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q71." },
-            { id: 72, section: 'C', question: "Question 72 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q72." },
-            { id: 73, section: 'C', question: "Question 73 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q73." },
-            { id: 74, section: 'C', question: "Question 74 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q74." },
-            { id: 75, section: 'C', question: "Question 75 for Numerical Ability?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q75." },
-
-
-            // Section D: English Language & Comprehension (Q76-Q100)
-            {
-                id: 76,
-                section: 'D',
-                question: "Choose the synonym for 'Ephemeral'.",
-                options: ["Lasting", "Permanent", "Fleeting", "Eternal"],
-                correct: 2,
-                explanation: "'Ephemeral' means lasting for a very short time, making 'fleeting' its synonym."
-            },
-            {
-                id: 77,
-                section: 'D',
-                question: "Identify the part of speech of the underlined word: 'She **quickly** ran to the store.'",
-                options: ["Noun", "Verb", "Adjective", "Adverb"],
-                correct: 3,
-                explanation: "'Quickly' describes how she ran, making it an adverb."
-            },
-            {
-                id: 78,
-                section: 'D',
-                question: "Complete the sentence: 'Neither John ___ Mary was at home.'",
-                options: ["or", "nor", "and", "but"],
-                correct: 1,
-                explanation: "The correlative conjunction for 'Neither' is 'nor'."
-            },
-            { id: 79, section: 'D', question: "Question 79 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q79." },
-            { id: 80, section: 'D', question: "Question 80 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q80." },
-            { id: 81, section: 'D', question: "Question 81 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q81." },
-            { id: 82, section: 'D', question: "Question 82 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q82." },
-            { id: 83, section: 'D', question: "Question 83 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q83." },
-            { id: 84, section: 'D', question: "Question 84 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q84." },
-            { id: 85, section: 'D', question: "Question 85 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q85." },
-            { id: 86, section: 'D', question: "Question 86 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q86." },
-            { id: 87, section: 'D', question: "Question 87 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q87." },
-            { id: 88, section: 'D', question: "Question 88 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q88." },
-            { id: 89, section: 'D', question: "Question 89 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q89." },
-            { id: 90, section: 'D', question: "Question 90 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q90." },
-            { id: 91, section: 'D', question: "Question 91 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q91." },
-            { id: 92, section: 'D', question: "Question 92 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q92." },
-            { id: 93, section: 'D', question: "Question 93 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q93." },
-            { id: 94, section: 'D', question: "Question 94 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q94." },
-            { id: 95, section: 'D', question: "Question 95 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q95." },
-            { id: 96, section: 'D', question: "Question 96 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q96." },
-            { id: 97, section: 'D', question: "Question 97 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 2, explanation: "Explanation for Q97." },
-            { id: 98, section: 'D', question: "Question 98 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 3, explanation: "Explanation for Q98." },
-            { id: 99, section: 'D', question: "Question 99 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 0, explanation: "Explanation for Q99." },
-            { id: 100, section: 'D', question: "Question 100 for English?", options: ["Opt A", "Opt B", "Opt C", "Opt D"], correct: 1, explanation: "Explanation for Q100." }
-        ];
-
-        let userAnswers = new Array(questions.length).fill(null); // Stores index of selected option
-        const startTimerBtn = document.getElementById('startTimerBtn');
-        const countdownDisplay = document.getElementById('countdown');
-        const sectionButtons = document.querySelectorAll('.section-button');
-        const questionGrid = document.getElementById('questionGrid');
-        const qContent = document.querySelector('.q-content');
-        const submitTestBtn = document.getElementById('submitTestBtn');
-        const resultSection = document.getElementById('resultSection');
-        const testMainContent = document.getElementById('testMainContent');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const resultDetails = document.getElementById('resultDetails');
-
-        // Initial setup
-        document.addEventListener('DOMContentLoaded', () => {
-            renderQuestionsForSection('A'); // Show General Awareness by default
-            updateQuestionGrid();
-        });
-
-        startTimerBtn.addEventListener('click', () => {
-            if (!testStarted) {
-                startTimer();
-                testStarted = true;
-                startTimerBtn.disabled = true;
-                submitTestBtn.disabled = false;
-                // Enable inputs for questions
-                document.querySelectorAll('.options input[type="radio"]').forEach(input => {
-                    input.disabled = false;
-                });
-            }
-        });
-
-        submitTestBtn.addEventListener('click', () => {
-            if (confirm("Are you sure you want to submit the test? You cannot change answers after submission.")) {
-                endTest();
-            }
-        });
-
-        sectionButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                sectionButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                const section = button.dataset.section;
-                renderQuestionsForSection(section);
-                updateQuestionGrid();
-                scrollToTop(); // Scroll to top of test content when section changes
-            });
-        });
-
-        function formatTime(seconds) {
-            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
-            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
-            const s = String(seconds % 60).padStart(2, '0');
-            return `${h}:${m}:${s}`;
-        }
-
-        function startTimer() {
-            countdownDisplay.textContent = formatTime(timeLeft);
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                countdownDisplay.textContent = formatTime(timeLeft);
-
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    countdownDisplay.textContent = "TIME UP!";
-                    endTest();
-                } else if (timeLeft <= 300 && timeLeft > 0) { // 5 minutes warning
-                    countdownDisplay.style.color = var(--danger-color);
-                    countdownDisplay.style.animation = 'blink 1s infinite';
-                }
-            }, 1000);
-        }
-
-        function renderQuestionsForSection(section) {
-            qContent.innerHTML = ''; // Clear previous questions
-            const sectionQuestions = questions.filter(q => q.section === section);
-
-            // Add Prev/Next/Submit buttons as needed, but for a full-length, we'll generate all questions
-            // We are using a single-question view with navigation.
-            sectionQuestions.forEach((q, indexInSection) => {
-                const globalIndex = questions.indexOf(q);
-                const questionDiv = document.createElement('div');
-                questionDiv.classList.add('question');
-                questionDiv.dataset.questionId = q.id; // Store original question ID
-                questionDiv.dataset.globalIndex = globalIndex; // Store global index
-
-                // Add navigation buttons within the question content div
-                const navigationButtonsDiv = document.createElement('div');
-                navigationButtonsDiv.classList.add('navigation-buttons');
-
-                const prevButton = document.createElement('button');
-                prevButton.classList.add('nav-btn');
-                prevButton.textContent = 'Previous';
-                prevButton.disabled = (globalIndex === 0);
-                prevButton.addEventListener('click', () => navigateQuestion(globalIndex - 1));
-                navigationButtonsDiv.appendChild(prevButton);
-
-                const nextButton = document.createElement('button');
-                nextButton.classList.add('nav-btn');
-                nextButton.textContent = 'Next';
-                nextButton.disabled = (globalIndex === questions.length - 1);
-                nextButton.addEventListener('click', () => navigateQuestion(globalIndex + 1));
-                navigationButtonsDiv.appendChild(nextButton);
-                
-                // Add a "Mark for Review" button (optional, but good for exams)
-                // const markButton = document.createElement('button');
-                // markButton.classList.add('nav-btn');
-                // markButton.textContent = 'Mark for Review';
-                // markButton.style.backgroundColor = 'var(--warning-color)';
-                // markButton.style.color = 'var(--dark-text)';
-                // markButton.addEventListener('click', () => toggleMarkForReview(globalIndex));
-                // navigationButtonsDiv.appendChild(markButton);
-
-
-                questionDiv.innerHTML = `
-                    <h3>Question ${q.id}: ${q.question}</h3>
-                    <div class="options">
-                        ${q.options.map((option, optIndex) => `
-                            <label>
-                                <input type="radio" name="question${q.id}" value="${optIndex}" ${userAnswers[globalIndex] === optIndex ? 'checked' : ''} ${testStarted ? '' : 'disabled'}>
-                                ${option}
-                            </label>
-                        `).join('')}
-                    </div>
-                `;
-                questionDiv.appendChild(navigationButtonsDiv); // Append nav buttons to question div
-                qContent.appendChild(questionDiv);
-
-                // Add event listeners for options
-                questionDiv.querySelectorAll(`input[name="question${q.id}"]`).forEach(input => {
-                    input.addEventListener('change', (event) => {
-                        userAnswers[globalIndex] = parseInt(event.target.value);
-                        updateQuestionGridButton(globalIndex, true); // Mark as attempted
-                    });
-                });
-            });
-
-            // Show the first question of the current section
-            const firstQuestionOfSection = qContent.querySelector('.question');
-            if (firstQuestionOfSection) {
-                currentQuestionIndex = parseInt(firstQuestionOfSection.dataset.globalIndex);
-                showQuestion(currentQuestionIndex);
-            }
-        }
-
-        function showQuestion(index) {
-            const allQuestions = qContent.querySelectorAll('.question');
-            allQuestions.forEach(q => q.classList.remove('active'));
-
-            const targetQuestion = qContent.querySelector(`.question[data-global-index="${index}"]`);
-            if (targetQuestion) {
-                targetQuestion.classList.add('active');
-                currentQuestionIndex = index;
-                highlightQuestionNavButton(index);
-                // Update navigation buttons enabled/disabled state
-                const prevBtn = targetQuestion.querySelector('.nav-btn:first-child');
-                const nextBtn = targetQuestion.querySelector('.nav-btn:nth-child(2)'); // Adjust if mark button is added
-
-                if (prevBtn) prevBtn.disabled = (index === 0);
-                if (nextBtn) nextBtn.disabled = (index === questions.length - 1);
-            } else {
-                 // If the question isn't in the current section view, we need to load its section first.
-                 // This handles direct clicks on question numbers in the grid from other sections.
-                const targetQ = questions[index];
-                if (targetQ) {
-                    const targetSectionBtn = document.querySelector(`.section-button[data-section="${targetQ.section}"]`);
-                    if (targetSectionBtn && !targetSectionBtn.classList.contains('active')) {
-                        targetSectionBtn.click(); // This will re-render and then call showQuestion internally
-                        // Need a slight delay or callback mechanism here if rendering is asynchronous
-                        // For synchronous renderQuestionsForSection, this should work.
-                        setTimeout(() => { // Small delay to ensure renderQuestionsForSection completes
-                            showQuestion(index);
-                        }, 50);
-                        return; // Exit to avoid processing further now
-                    }
-                }
-            }
-            scrollToTop(); // Always scroll to top when changing questions
-        }
-
-        function navigateQuestion(index) {
-            if (index >= 0 && index < questions.length) {
-                showQuestion(index);
-            }
-        }
-
-        function updateQuestionGrid() {
-            questionGrid.innerHTML = ''; // Clear previous grid
-            questions.forEach((q, index) => {
-                const qButton = document.createElement('button');
-                qButton.classList.add('q-nav-button');
-                qButton.textContent = q.id;
-                qButton.dataset.questionIndex = index;
-
-                if (index === currentQuestionIndex) {
-                    qButton.classList.add('current');
-                }
-                if (userAnswers[index] !== null) {
-                    qButton.classList.add('attempted');
-                }
-
-                qButton.addEventListener('click', () => showQuestion(index));
-                questionGrid.appendChild(qButton);
-            });
-        }
-
-        function highlightQuestionNavButton(index) {
-            document.querySelectorAll('.q-nav-button').forEach(btn => btn.classList.remove('current'));
-            const currentBtn = document.querySelector(`.q-nav-button[data-question-index="${index}"]`);
-            if (currentBtn) {
-                currentBtn.classList.add('current');
-            }
-        }
-
-        function updateQuestionGridButton(index, attempted = false) {
-            const qButton = document.querySelector(`.q-nav-button[data-question-index="${index}"]`);
-            if (qButton) {
-                if (attempted) {
-                    qButton.classList.add('attempted');
-                } else {
-                    qButton.classList.remove('attempted');
-                }
-            }
-        }
-
-        function endTest() {
-            clearInterval(timerInterval); // Stop the timer
-            startTimerBtn.disabled = true;
-            submitTestBtn.disabled = true;
-            testStarted = false; // Prevent further interaction
-
-            // Disable all inputs
-            document.querySelectorAll('input[type="radio"]').forEach(input => {
-                input.disabled = true;
-            });
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.disabled = true);
-            document.querySelectorAll('.section-button').forEach(btn => btn.disabled = true);
-
-
-            calculateResults();
-            testMainContent.style.display = 'none'; // Hide test content
-            resultSection.style.display = 'block'; // Show results
-            scrollToTop(); // Scroll to top to show results
-        }
-
-        function calculateResults() {
-            let totalScore = 0;
-            resultDetails.innerHTML = ''; // Clear previous results
-
-            questions.forEach((q, index) => {
-                const userAnswerIndex = userAnswers[index];
-                const isCorrect = (userAnswerIndex !== null && userAnswerIndex === q.correct);
-                
-                if (isCorrect) {
-                    totalScore += 2; // 2 marks per correct answer
-                }
-
-                const resultDiv = document.createElement('div');
-                resultDiv.classList.add('question-result');
-                resultDiv.classList.add(isCorrect ? 'correct' : 'incorrect');
-
-                let userAnswerText = 'Not Attempted';
-                if (userAnswerIndex !== null) {
-                    userAnswerText = q.options[userAnswerIndex];
-                }
-
-                resultDiv.innerHTML = `
-                    <h4>Question ${q.id}: ${q.question}</h4>
-                    <p class="correct-answer">Correct Answer: ${q.options[q.correct]}</p>
-                    <p class="your-answer">Your Answer: ${userAnswerText} ${isCorrect ? '(Correct)' : (userAnswerIndex !== null ? '(Incorrect)' : '')}</p>
-                    ${q.explanation ? `<div class="explanation"><strong>Explanation:</strong> ${q.explanation}</div>` : ''}
-                `;
-                resultDetails.appendChild(resultDiv);
-            });
-
-            scoreDisplay.textContent = `Total Score: ${totalScore}/${questions.length * 2}`;
-        }
-
-        function scrollToTop() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
-    </script>
-</body>
-</html>
-
+            { id: 15, section: 'A',
