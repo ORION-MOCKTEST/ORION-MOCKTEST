@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Your Soulmate 💖</title>
+<style>
+  body {
+    margin:0;
+    padding:0;
+    font-family:'Poppins', sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+    overflow:hidden;
+    background: linear-gradient(135deg, #ffe6f2, #ffccdf);
+    position:relative;
+  }
+  h1 {
+    color:#ff4081;
+    font-size:2rem;
+    text-shadow:0 0 8px #fff,0 0 15px #ff80bf;
+    animation:pulse 2s infinite;
+    z-index:1;
+  }
+  .dialogue-box {
+    background: rgba(255,255,255,0.9);
+    border:2px solid #ff99cc;
+    border-radius:15px;
+    padding:25px 20px;
+    width:100%;
+    max-width:350px;
+    box-shadow:0 6px 15px rgba(255,105,180,0.4);
+    text-align:center;
+    z-index:1;
+    position:relative;
+  }
+  .dialogue-box p {
+    font-size:1.1rem;
+    margin-bottom:15px;
+  }
+  #startButton {
+    width:100%;
+    background-color:#ff66b2;
+    color:white;
+    border:none;
+    border-radius:10px;
+    padding:14px 0;
+    font-size:1.1rem;
+    cursor:not-allowed;
+    transition:all 0.3s ease;
+    box-shadow:0 4px 8px rgba(255,105,180,0.3);
+  }
+  #startButton.active {
+    background-color:#ff4081;
+    cursor:pointer;
+    box-shadow:0 0 15px #ff80bf,0 0 25px #ff99cc;
+    animation:glow 1.5s infinite alternate;
+  }
+  .timer {
+    font-size:1rem;
+    font-weight:600;
+    margin-top:10px;
+    color:#ff4081;
+    text-shadow:0 0 6px #fff;
+    animation:glowText 1.2s infinite alternate;
+  }
+  @keyframes glow { from{box-shadow:0 0 10px #ff80bf;} to{box-shadow:0 0 25px #ff4da6;} }
+  @keyframes glowText { from{opacity:0.7;text-shadow:0 0 5px #fff;} to{opacity:1;text-shadow:0 0 15px #ff99cc;} }
+  @keyframes pulse {0%{transform:scale(1);}50%{transform:scale(1.03);}100%{transform:scale(1);} }
+  .heart {
+    position:absolute;
+    width:10px;
+    height:10px;
+    background:red;
+    transform:rotate(45deg);
+    animation:floatUp linear infinite;
+    border-radius:2px;
+  }
+  .heart:before,.heart:after {
+    content:"";
+    position:absolute;
+    width:10px;
+    height:10px;
+    background:red;
+    border-radius:50%;
+  }
+  .heart:before {top:-5px; left:0;}
+  .heart:after {top:0; left:-5px;}
+  @keyframes floatUp {
+    0% {transform:translateY(0) rotate(45deg); opacity:1;}
+    100% {transform:translateY(-600px) rotate(45deg); opacity:0;}
+  }
+</style>
+</head>
+<body>
+
+<h1>Find Your Soulmate 💘</h1>
+
+<div class="dialogue-box">
+<p>Are you ready to chat?</p>
+<button id="startButton" disabled>Wait 10s...</button>
+<div class="timer" id="timer">⏳ 10s remaining</div>
+</div>
+
+<script>
+// Countdown timer
+let timeLeft = 10;
+const btn = document.getElementById("startButton");
+const timerDisplay = document.getElementById("timer");
+const countdown = setInterval(() => {
+  timeLeft--;
+  if(timeLeft>0){
+    btn.textContent = "Wait " + timeLeft + "s...";
+    timerDisplay.textContent = "⏳ " + timeLeft + "s remaining";
+  } else {
+    clearInterval(countdown);
+    btn.textContent = "Enter 💬";
+    timerDisplay.textContent = "Ready to go!";
+    btn.disabled = false;
+    btn.classList.add("active");
+    btn.onclick = function(){
+      window.location.href = "https://thepeacockdaily.blogspot.com/2025/10/test-2.html?m=1";
+    };
+  }
+},1000);
+
+// Create floating hearts
+for(let i=0;i<25;i++){
+  let heart = document.createElement('div');
+  heart.className='heart';
+  heart.style.left=Math.random()*100+'%';
+  heart.style.width=(5+Math.random()*10)+'px';
+  heart.style.height=heart.style.width;
+  heart.style.animationDuration=(3+Math.random()*3)+'s';
+  heart.style.animationDelay=Math.random()*5+'s';
+  document.body.appendChild(heart);
+}
+</script>
+
+</body>
+</html>
